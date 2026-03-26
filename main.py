@@ -36,6 +36,35 @@ class GitLabClient:
             r.raise_for_status()
             
             return r.json()
+        
+    async def commit_file(
+        self,
+        branch_name: str,
+        file_path: str,
+        content: str,
+        commit_message: str,
+    ) -> dict:
+        async with httpx.AsyncClient() as client:
+            r = await client.post(
+                f"{self.api_base}/repository/commits",
+                headers = self.headers,
+                json = {
+                    "branch": branch_name,
+                    "commit_message": commit_message,
+                    "author_name": "ClaudeOps",
+                    "author_email": "bot@claudeops.ai",
+                    "actions": [
+                        {
+                            "action": "create",
+                            "file_path": file_path,
+                            "content": content,
+                        }
+                    ],
+                },
+            )
+            r.raise_for_status()
+           
+            return r.json()
 
 async def test(gitlab: GitLabClient):
     try:
@@ -45,6 +74,16 @@ async def test(gitlab: GitLabClient):
         )
         
         print("Branch created")
+        
+        result = await gitlab.commit_file(
+            branch_name = "test",
+            file_path = "hello.py",
+            content = 'print("hello from ClaudeOps")\n',
+            commit_message = "feat: add hello.py",
+        )
+        
+        print("Committed:", result["id"])
+        
     except Exception as e:
         print(e)
         
