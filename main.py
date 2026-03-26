@@ -65,6 +65,29 @@ class GitLabClient:
             r.raise_for_status()
            
             return r.json()
+    
+    async def create_mr(
+        self,
+        branch_name: str,
+        title: str,
+        description: str,
+        target_branch: str = "main",
+    ) -> dict:
+        async with httpx.AsyncClient() as client:
+            r = await client.post(
+                f"{self.api_base}/merge_requests",
+                headers = self.headers,
+                json = {
+                    "source_branch": branch_name,
+                    "target_branch": target_branch,
+                    "title": title,
+                    "description": description,
+                    "remove_source_branch": True,
+                },
+            )
+            r.raise_for_status()
+            
+            return r.json()
 
 async def test(gitlab: GitLabClient):
     try:
@@ -83,6 +106,14 @@ async def test(gitlab: GitLabClient):
         )
         
         print("Committed:", result["id"])
+        
+        result = await gitlab.create_mr(
+            branch = "test",
+            title = "feat: ClaudeOps test MR",
+            description = "This MR was opened automatically by ClaudeOps.",
+        )
+        
+        print("Merged:", result["web_url"])
         
     except Exception as e:
         print(e)
